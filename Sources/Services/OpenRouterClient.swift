@@ -25,14 +25,19 @@ final class OpenRouterClient {
 
     private let endpoint = URL(string: "https://openrouter.ai/api/v1/chat/completions")!
 
-    /// A free model. Models suffixed with ":free" don't consume credits
-    /// (subject to a daily request limit).
-    let model: String
+    /// Free models (":free" => no credits used, subject to a daily limit).
+    /// OpenRouter tries them in order, so if the first is rate-limited upstream
+    /// it automatically falls back to the next — keeps the app working.
+    let models: [String]
 
     private let session: URLSession
 
-    init(model: String = "deepseek/deepseek-chat-v3.1:free") {
-        self.model = model
+    init(models: [String] = [
+        "baidu/ernie-5.5-flash-preview:free",
+        "google/gemma-4-31b-it:free",
+        "google/gemma-4-26b-a4b-it:free"
+    ]) {
+        self.models = models
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 60
         config.waitsForConnectivity = false
@@ -73,7 +78,7 @@ final class OpenRouterClient {
         request.setValue("https://github.com/streaming-chat", forHTTPHeaderField: "HTTP-Referer")
         request.setValue("StreamingChat", forHTTPHeaderField: "X-Title")
 
-        let body = RequestBody(model: model, messages: messages, stream: true)
+        let body = RequestBody(models: models, messages: messages, stream: true)
         request.httpBody = try JSONEncoder().encode(body)
 
         let (bytes, response) = try await session.bytes(for: request)
@@ -106,7 +111,7 @@ final class OpenRouterClient {
     // MARK: - Wire formats
 
     private struct RequestBody: Encodable {
-        let model: String
+        let models: [String]
         let messages: [APIMessage]
         let stream: Bool
     }

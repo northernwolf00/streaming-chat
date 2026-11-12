@@ -2,27 +2,35 @@
 //  ContentView.swift
 //  StreamingChat
 //
-//  Skeleton placeholder — replaced by the real chat UI in a later step.
+//  Root split view: chat list on the left, conversation on the right.
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
+    @Query(sort: \Chat.updatedAt, order: .reverse) private var chats: [Chat]
+    @State private var selectedChatID: UUID?
+
+    private var selectedChat: Chat? {
+        chats.first { $0.id == selectedChatID }
+    }
+
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "bubble.left.and.bubble.right.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.tint)
-            Text("StreamingChat")
-                .font(.title2.bold())
-            Text("Skeleton — ready to build on")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        NavigationSplitView {
+            ChatListView(selectedChatID: $selectedChatID)
+        } detail: {
+            if let chat = selectedChat {
+                ConversationView(chat: chat)
+                    .id(chat.id)
+            } else {
+                NoSelectionView()
+            }
         }
-        .padding()
     }
 }
 
 #Preview {
     ContentView()
+        .modelContainer(for: [Chat.self, Message.self], inMemory: true)
 }
