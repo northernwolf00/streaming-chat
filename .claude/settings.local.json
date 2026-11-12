@@ -44,7 +44,15 @@
       "Bash(git commit --quiet -m 'docs: обновить ai-logs полным логом сессии \\(ключи/почты вырезаны\\) *)",
       "Bash(python3 -)",
       "Bash(git check-ignore *)",
-      "Bash(git commit --quiet -m 'chore: финальный ai-logs и .claude в архив *)"
+      "Bash(git commit --quiet -m 'chore: финальный ai-logs и .claude в архив *)",
+      "Read(//Users/guwanchaldurdyyev/Development/**)",
+      "Bash(rm -rf /private/tmp/claude-501/-Users-guwanchaldurdyyev-Development-streaming-chat/f0e90bd1-44ab-4d4c-bb81-3b4f9f45e711/scratchpad/repo-backup)",
+      "Bash(cp -R streaming-chat/.git /private/tmp/claude-501/-Users-guwanchaldurdyyev-Development-streaming-chat/f0e90bd1-44ab-4d4c-bb81-3b4f9f45e711/scratchpad/repo-backup)",
+      "Bash(git-filter-repo --version)",
+      "Bash(git reflog *)",
+      "Bash(git gc *)",
+      "Bash(git cat-file *)",
+      "Bash(git fsck *)"
     ]
   }
 }
