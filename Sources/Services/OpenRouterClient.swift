@@ -94,9 +94,14 @@ final class OpenRouterClient {
             "google/gemma-4-31b-it:free",
             "google/gemma-4-26b-a4b-it:free"
         ],
+        // OpenRouter allows at most 3 models in the fallback array. Gemma is
+        // preferred but often rate-limited on the shared free pool, so the chain
+        // falls through to Nemotron-VL and finally `openrouter/free` (an
+        // auto-router over available free models) so a photo reply still works.
         visionModels: [String] = [
             "google/gemma-4-31b-it:free",
-            "google/gemma-4-26b-a4b-it:free"
+            "nvidia/nemotron-3.5-super-vl:free",
+            "openrouter/free"
         ]
     ) {
         self.models = models
