@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct MessageBubble: View {
     let message: Message
@@ -14,14 +15,26 @@ struct MessageBubble: View {
 
     private var isUser: Bool { message.role == .user }
 
+    private var attachedImage: UIImage? {
+        guard let data = message.imageData else { return nil }
+        return UIImage(data: data)
+    }
+
     var body: some View {
         HStack {
             if isUser { Spacer(minLength: 48) }
 
-            Group {
+            VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
+                if let image = attachedImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: 220, maxHeight: 220)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
                 if message.content.isEmpty && isStreaming {
                     TypingIndicator()
-                } else {
+                } else if !message.content.isEmpty {
                     Text(message.content)
                         .textSelection(.enabled)
                 }

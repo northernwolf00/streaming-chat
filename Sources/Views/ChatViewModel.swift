@@ -18,22 +18,24 @@ final class ChatViewModel: ObservableObject {
 
     private let systemPrompt = APIMessage(
         role: Role.system.rawValue,
-        content: "You are a helpful, concise assistant."
+        text: "You are a helpful, concise assistant."
     )
 
     // MARK: - Actions
 
-    /// Append the user's message and start streaming the assistant reply.
-    func send(_ text: String, to chat: Chat, context: ModelContext) {
+    /// Append the user's message (optionally with a photo) and start streaming
+    /// the assistant reply.
+    func send(_ text: String, imageData: Data? = nil, to chat: Chat, context: ModelContext) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !isStreaming else { return }
+        // Allow sending with text, a photo, or both.
+        guard (!trimmed.isEmpty || imageData != nil), !isStreaming else { return }
 
         error = nil
-        let userMessage = Message(role: .user, content: trimmed)
+        let userMessage = Message(role: .user, content: trimmed, imageData: imageData)
         userMessage.chat = chat
         chat.messages.append(userMessage)
         if chat.title == "New Chat" {
-            chat.title = String(trimmed.prefix(40))
+            chat.title = trimmed.isEmpty ? "Photo" : String(trimmed.prefix(40))
         }
         chat.updatedAt = .now
         try? context.save()
@@ -63,7 +65,7 @@ final class ChatViewModel: ObservableObject {
         // Build the request history BEFORE adding the empty assistant bubble.
         var history = [systemPrompt]
         history += chat.sortedMessages.map {
-            APIMessage(role: $0.role.rawValue, content: $0.content)
+            APIMessage(role: $0.role.rawValue, text: $0.content, imageData: $0.imageData)
         }
 
         let assistant = Message(role: .assistant, content: "")

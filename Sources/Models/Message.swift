@@ -23,15 +23,22 @@ final class Message {
     var createdAt: Date
     var chat: Chat?
 
+    /// Optional attached image (compressed JPEG). Stored outside the main
+    /// database file via external storage so large blobs don't bloat it.
+    @Attribute(.externalStorage) var imageData: Data?
+
     var role: Role {
         get { Role(rawValue: roleRaw) ?? .assistant }
         set { roleRaw = newValue.rawValue }
     }
 
-    init(role: Role, content: String, createdAt: Date = .now) {
+    var hasImage: Bool { imageData != nil }
+
+    init(role: Role, content: String, imageData: Data? = nil, createdAt: Date = .now) {
         self.id = UUID()
         self.roleRaw = role.rawValue
         self.content = content
+        self.imageData = imageData
         self.createdAt = createdAt
     }
 }

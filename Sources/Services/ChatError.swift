@@ -12,6 +12,8 @@ enum ChatError: LocalizedError, Equatable {
     case rateLimited          // HTTP 429 — free-tier daily limit reached
     case server(status: Int)  // other non-success HTTP status
     case missingKey           // placeholder key still in place
+    case imageUnsupported     // selected model can't accept image input
+    case imageTooLarge        // attached image rejected as too large
     case decoding
     case cancelled            // user pressed Stop
     case unknown(String)
@@ -26,6 +28,10 @@ enum ChatError: LocalizedError, Equatable {
             return "Server error (HTTP \(status)). Please try again."
         case .missingKey:
             return "No API key configured. Set the OpenRouter key in APIKey.swift."
+        case .imageUnsupported:
+            return "This model can't read images right now. Try again or send without a photo."
+        case .imageTooLarge:
+            return "The image is too large. Try a smaller photo."
         case .decoding:
             return "Couldn't read the response from the server."
         case .cancelled:
