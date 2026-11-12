@@ -7,24 +7,6 @@
 
 import SwiftUI
 
-/// Shown in the sidebar when there are no chats at all.
-struct EmptyChatsView: View {
-    var onCreate: () -> Void
-
-    var body: some View {
-        ContentUnavailableView {
-            Label("No Chats", systemImage: "bubble.left.and.bubble.right")
-        } description: {
-            Text("Start a new conversation to begin.")
-        } actions: {
-            Button(action: onCreate) {
-                Label("New Chat", systemImage: "square.and.pencil")
-            }
-            .buttonStyle(.borderedProminent)
-        }
-    }
-}
-
 /// Shown in the detail pane when no chat is selected.
 struct NoSelectionView: View {
     var body: some View {

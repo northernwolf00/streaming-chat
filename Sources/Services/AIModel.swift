@@ -16,12 +16,11 @@ struct AIModel: Identifiable, Hashable {
 
     var isAuto: Bool { id == AIModel.autoID }
 
-    /// Row shown in the picker: name, capability summary, and a camera marker
-    /// for vision-capable models.
-    var menuLabel: String {
-        let camera = supportsVision ? " 📷" : ""
-        return "\(name) · \(summary)\(camera)"
-    }
+    /// Row text shown in the picker: name + capability summary.
+    var menuLabel: String { "\(name) · \(summary)" }
+
+    /// SF Symbol marking the model's capability (used instead of an emoji).
+    var capabilityIcon: String { supportsVision ? "photo" : "textformat" }
 
     static let autoID = "auto"
 }

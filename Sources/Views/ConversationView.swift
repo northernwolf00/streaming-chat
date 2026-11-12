@@ -46,18 +46,25 @@ struct ConversationView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Picker("Model", selection: $selectedModelID) {
-                        ForEach(ModelCatalog.all) { model in
-                            Text(model.menuLabel).tag(model.id)
+                    ForEach(ModelCatalog.all) { model in
+                        Button {
+                            selectedModelID = model.id
+                        } label: {
+                            Label(
+                                model.menuLabel,
+                                systemImage: model.id == selectedModelID ? "checkmark" : model.capabilityIcon
+                            )
                         }
                     }
                 } label: {
-                    HStack(spacing: 3) {
+                    HStack(spacing: 4) {
                         Image(systemName: "cpu")
                         Text(ModelCatalog.model(id: selectedModelID).name)
                             .lineLimit(1)
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
                     }
-                    .font(.footnote)
+                    .font(.subheadline.weight(.medium))
                 }
                 .accessibilityLabel("Choose model")
             }
