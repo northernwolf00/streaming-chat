@@ -2,8 +2,8 @@
 //  ChatListView.swift
 //  StreamingChat
 //
-//  Sidebar / home: app-bar "Chats" title, chat history list, and a prominent
-//  "New Chat" button pinned to the bottom.
+//  Sidebar / home: "Chats" title, chat history list, a New Chat button in the
+//  top bar, per-chat delete and a "Clear All History" action.
 //
 
 import SwiftUI
@@ -14,6 +14,8 @@ struct ChatListView: View {
     @Query(sort: \Chat.updatedAt, order: .reverse) private var chats: [Chat]
     @Binding var selectedChatID: UUID?
 
+    @State private var showClearAllConfirm = false
+
     var body: some View {
         Group {
             if chats.isEmpty {
@@ -23,6 +25,13 @@ struct ChatListView: View {
                     ForEach(chats) { chat in
                         ChatRow(chat: chat)
                             .tag(chat.id)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    delete(chat)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                     }
                     .onDelete(perform: deleteChats)
                 }
@@ -31,25 +40,36 @@ struct ChatListView: View {
         }
         .navigationTitle("Chats")
         .navigationBarTitleDisplayMode(.large)
-        .safeAreaInset(edge: .bottom) {
-            newChatButton
+        .toolbar {
+            if !chats.isEmpty {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Button(role: .destructive) {
+                            showClearAllConfirm = true
+                        } label: {
+                            Label("Clear All History", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .accessibilityLabel("More")
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: createChat) {
+                    Image(systemName: "square.and.pencil")
+                }
+                .accessibilityLabel("New Chat")
+            }
         }
-    }
-
-    // MARK: - Bottom action
-
-    private var newChatButton: some View {
-        Button(action: createChat) {
-            Label("New Chat", systemImage: "square.and.pencil")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+        .confirmationDialog("Clear all chat history?",
+                            isPresented: $showClearAllConfirm,
+                            titleVisibility: .visible) {
+            Button("Clear All", role: .destructive, action: clearAll)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently deletes all chats.")
         }
-        .buttonStyle(.borderedProminent)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .padding(.horizontal)
-        .padding(.bottom, 8)
-        .background(.bar)
     }
 
     // MARK: - Empty state
@@ -64,6 +84,11 @@ struct ChatListView: View {
             Text("Start a new conversation to begin.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+            Button(action: createChat) {
+                Label("New Chat", systemImage: "square.and.pencil")
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -77,10 +102,24 @@ struct ChatListView: View {
         selectedChatID = chat.id
     }
 
+    private func delete(_ chat: Chat) {
+        if chat.id == selectedChatID { selectedChatID = nil }
+        context.delete(chat)
+        try? context.save()
+    }
+
     private func deleteChats(at offsets: IndexSet) {
         for index in offsets {
             let chat = chats[index]
             if chat.id == selectedChatID { selectedChatID = nil }
+            context.delete(chat)
+        }
+        try? context.save()
+    }
+
+    private func clearAll() {
+        selectedChatID = nil
+        for chat in chats {
             context.delete(chat)
         }
         try? context.save()
