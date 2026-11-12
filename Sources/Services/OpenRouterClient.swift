@@ -113,12 +113,15 @@ final class OpenRouterClient {
     }
 
     /// Streams the assistant's reply token-by-token for the given conversation.
+    /// - Parameter modelOverride: a specific model id to pin, or `nil` for the
+    ///   automatic fallback chain.
     /// - Throws: `ChatError` (via the stream) on failure.
-    func streamReply(messages: [APIMessage]) -> AsyncThrowingStream<String, Error> {
+    func streamReply(messages: [APIMessage],
+                     modelOverride: String? = nil) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    try await self.performStream(messages: messages) { token in
+                    try await self.performStream(messages: messages, modelOverride: modelOverride) { token in
                         continuation.yield(token)
                     }
                     continuation.finish()
@@ -135,12 +138,19 @@ final class OpenRouterClient {
     // MARK: - Internals
 
     private func performStream(messages: [APIMessage],
+                               modelOverride: String?,
                                onToken: (String) -> Void) async throws {
         guard !APIKey.isPlaceholder else { throw ChatError.missingKey }
 
-        // Route to a vision model when any message carries an image.
+        // A pinned model is sent alone; otherwise use the automatic fallback
+        // chain (vision chain when any message carries an image).
         let hasImage = messages.contains { $0.hasImage }
-        let chosenModels = hasImage ? visionModels : models
+        let chosenModels: [String]
+        if let modelOverride {
+            chosenModels = [modelOverride]
+        } else {
+            chosenModels = hasImage ? visionModels : models
+        }
 
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"

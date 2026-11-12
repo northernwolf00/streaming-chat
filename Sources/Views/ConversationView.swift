@@ -18,6 +18,9 @@ struct ConversationView: View {
     @State private var draft = ""
     @FocusState private var inputFocused: Bool
 
+    /// Selected model, persisted across launches ("auto" = smart fallback).
+    @AppStorage("selectedModelID") private var selectedModelID = AIModel.autoID
+
     // Photo attachment state.
     @State private var pickerItem: PhotosPickerItem?
     @State private var attachedImageData: Data?
@@ -30,7 +33,7 @@ struct ConversationView: View {
             messageList
             if let error = viewModel.error {
                 ErrorBanner(error: error) {
-                    viewModel.retry(chat: chat, context: context)
+                    viewModel.retry(chat: chat, context: context, modelID: selectedModelID)
                 }
             }
             if attachedImageData != nil || isProcessingImage {
@@ -40,9 +43,36 @@ struct ConversationView: View {
         }
         .navigationTitle(chat.title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Picker("Model", selection: $selectedModelID) {
+                        ForEach(ModelCatalog.all) { model in
+                            Text(model.menuLabel).tag(model.id)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "cpu")
+                        Text(ModelCatalog.model(id: selectedModelID).name)
+                            .lineLimit(1)
+                    }
+                    .font(.footnote)
+                }
+                .accessibilityLabel("Choose model")
+            }
+        }
         .onChange(of: pickerItem) { _, newItem in
             loadAttachment(newItem)
         }
+        .onChange(of: selectedModelID) { _, _ in
+            // Switching to a text-only model drops any attached photo.
+            if !selectedSupportsVision { attachedImageData = nil }
+        }
+    }
+
+    private var selectedSupportsVision: Bool {
+        ModelCatalog.model(id: selectedModelID).supportsVision
     }
 
     // MARK: - Message list
@@ -119,14 +149,17 @@ struct ConversationView: View {
         // PhotosPicker label (a Sendable closure).
         let streaming = viewModel.isStreaming
         return HStack(alignment: .bottom, spacing: 8) {
-            PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
-                Image(systemName: "photo.on.rectangle")
-                    .font(.title3)
-                    .frame(width: 36, height: 36)
-                    .foregroundStyle(streaming ? Color.gray : Color.accentColor)
+            // Attach button only for vision-capable models (or Auto).
+            if selectedSupportsVision {
+                PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
+                    Image(systemName: "photo.on.rectangle")
+                        .font(.title3)
+                        .frame(width: 36, height: 36)
+                        .foregroundStyle(streaming ? Color.gray : Color.accentColor)
+                }
+                .disabled(streaming)
+                .accessibilityLabel("Attach photo")
             }
-            .disabled(streaming)
-            .accessibilityLabel("Attach photo")
 
             TextField("Message", text: $draft, axis: .vertical)
                 .lineLimit(1...5)
@@ -181,7 +214,7 @@ struct ConversationView: View {
         let image = attachedImageData
         draft = ""
         attachedImageData = nil
-        viewModel.send(text, imageData: image, to: chat, context: context)
+        viewModel.send(text, imageData: image, modelID: selectedModelID, to: chat, context: context)
     }
 
     /// Load the picked photo, downscale and compress it to keep requests small.
