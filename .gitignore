@@ -1,0 +1,18 @@
+# XcodeGen generates this — it must NOT be committed
+*.xcodeproj/
+
+# Xcode / build artifacts
+build/
+DerivedData/
+*.xcworkspace
+!default.xcworkspace
+.swiftpm/
+*.xcuserstate
+xcuserdata/
+
+# macOS
+.DS_Store
+
+# Secrets — never commit a real key
+.env
+secrets.json
