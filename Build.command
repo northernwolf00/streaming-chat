@@ -72,7 +72,28 @@ xcrun simctl install "$UDID" "$APP_PATH"
 echo "==> Launching $BUNDLE_ID"
 xcrun simctl launch "$UDID" "$BUNDLE_ID" || true
 
+# 7. Second step: build the native macOS version from the same sources.
 echo ""
 echo "============================================"
-echo "  Done. The app should be running in the Simulator."
+echo "  Building macOS version..."
+echo "============================================"
+xcodebuild \
+  -scheme "$SCHEME" \
+  -configuration Debug \
+  -destination 'platform=macOS' \
+  -derivedDataPath "$DERIVED" \
+  build
+
+# Ad-hoc sign so the unsigned Debug build launches locally (Apple Silicon
+# requires at least an ad-hoc signature), then open it.
+MAC_APP="$(find "$DERIVED/Build/Products/Debug" -maxdepth 1 -name 'StreamingChat.app' | head -1)"
+if [ -n "$MAC_APP" ]; then
+  codesign --force --deep --sign - "$MAC_APP" 2>/dev/null || true
+  echo "==> Opening macOS app: $MAC_APP"
+  open "$MAC_APP" || true
+fi
+
+echo ""
+echo "============================================"
+echo "  Done. iOS app runs in the Simulator; macOS app launched."
 echo "============================================"

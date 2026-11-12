@@ -4,6 +4,7 @@ options:
   bundleIdPrefix: com.northernwolf
   deploymentTarget:
     iOS: "18.0"
+    macOS: "15.0"
   createIntermediateGroups: true
   minimumXcodeGenVersion: "2.40.0"
 
@@ -19,8 +20,12 @@ settings:
 targets:
   StreamingChat:
     type: application
-    platform: iOS
-    deploymentTarget: "18.0"
+    # One native target that builds for both iOS and macOS from the same
+    # sources (not Mac Catalyst). See docs/plan.md for why this was chosen.
+    supportedDestinations: [iOS, macOS]
+    deploymentTarget:
+      iOS: "18.0"
+      macOS: "15.0"
     sources:
       - path: Sources
     settings:
@@ -35,6 +40,7 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: "YES"
         SWIFT_EMIT_LOC_STRINGS: "YES"
+        # iOS-only Info.plist keys (ignored on macOS):
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"

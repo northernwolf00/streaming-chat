@@ -56,7 +56,7 @@ struct ErrorBanner: View {
             }
         }
         .padding(12)
-        .background(Color(.secondarySystemBackground))
+        .background(Color.secondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .padding(.horizontal)
         .padding(.bottom, 4)

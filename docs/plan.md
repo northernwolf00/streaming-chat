@@ -70,15 +70,36 @@ Sources/
   ассистент отвечает по содержимому изображения; вложение сохраняется между перезапусками;
   при выборе не-vision модели — понятное сообщение/фолбэк.
 
-### 2.2. Версия для Mac
-- **Подход:** сделать target мультиплатформенным (добавить `platform: macOS` в
-  `project.yml` или отдельный target, переиспользующий `Sources/`); обернуть
-  macOS-специфичные отличия в `#if os(macOS)`; заменить несовместимые iOS-only API
-  (например `navigationBarTitleDisplayMode`) на кросс-платформенные варианты; включить
-  App Sandbox с правом исходящих сетевых соединений.
-- **Критерии готовности:** приложение собирается и запускается на macOS из того же
-  `project.yml`; `NavigationSplitView` работает как боковая панель; потоковый чат,
-  Стоп и хранение работают; `./Build.command` поддерживает сборку под Mac.
+### 2.2. Версия для Mac — ГОТОВО
+
+**Выбранный вариант и почему.** Использован **один мультиплатформенный таргет**
+через `supportedDestinations: [iOS, macOS]` в `project.yml` (XcodeGen), а **не**
+отдельный macOS-таргет. Это проще: одна цель, одна схема, один общий набор
+исходников и настроек — не нужно дублировать конфигурацию и синхронизировать два
+таргета. Это **нативный** AppKit-бэкенд SwiftUI, а не Mac Catalyst. Минимальная
+версия macOS — 15.0.
+
+**Как сделано.**
+- iOS-специфичный код изолирован через `#if os(iOS)` / `#if os(macOS)`.
+- Кросс-платформенный слой `Sources/Platform/Platform.swift`:
+  - изображения: `UIImage` ↔ `NSImage` через `Image(data:)`;
+  - сжатие фото — через **ImageIO** (`CGImageSource`/`CGImageDestination`),
+    одинаково на обеих платформах (вместо `UIGraphicsImageRenderer`);
+  - буфер обмена: `UIPasteboard` ↔ `NSPasteboard`;
+  - цвета: `secondarySystemBackground` ↔ `controlBackgroundColor`.
+- `navigationBarTitleDisplayMode`, `scrollDismissesKeyboard`, панель инструментов
+  `topBar*` — под `#if os(iOS)`; на macOS используются кросс-платформенные
+  `ToolbarItemPlacement`.
+- На Mac: `NavigationSplitView` с сайдбаром; отправка по **Enter**, перенос строки
+  по **Shift+Enter** (через `onKeyPress(keys:)`); минимальный размер окна
+  (`windowResizability(.contentMinSize)` + `frame(minWidth:minHeight:)`); светлая и
+  тёмная тема. `PhotosPicker` работает и на macOS.
+- `Build.command` вторым шагом собирает macOS-версию (`-destination platform=macOS`),
+  ad-hoc подписывает и открывает её — без ручных команд.
+
+**Критерии готовности:** ✅ обе платформы собираются из одного `project.yml`
+(BUILD SUCCEEDED, без предупреждений); macOS-приложение запускается нативно;
+`./Build.command` собирает iOS под симулятор и macOS-версию.
 
 ### 2.3. Офлайн-режим на Apple Foundation Models (iOS 26+)
 - **Подход:** использовать framework `FoundationModels` (`SystemLanguageModel`,

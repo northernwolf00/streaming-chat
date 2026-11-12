@@ -39,10 +39,12 @@ struct ChatListView: View {
             }
         }
         .navigationTitle("Chats")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
+        #endif
         .toolbar {
             if !chats.isEmpty {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: Self.menuPlacement) {
                     Menu {
                         Button(role: .destructive) {
                             showClearAllConfirm = true
@@ -55,7 +57,7 @@ struct ChatListView: View {
                     .accessibilityLabel("More")
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .primaryAction) {
                 Button(action: createChat) {
                     Image(systemName: "square.and.pencil")
                 }
@@ -70,6 +72,15 @@ struct ChatListView: View {
         } message: {
             Text("This permanently deletes all chats.")
         }
+    }
+
+    /// Leading placement for the overflow menu (iOS has a bar; macOS uses automatic).
+    private static var menuPlacement: ToolbarItemPlacement {
+        #if os(iOS)
+        .topBarLeading
+        #else
+        .automatic
+        #endif
     }
 
     // MARK: - Empty state

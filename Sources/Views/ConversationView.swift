@@ -9,7 +9,6 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
-import UIKit
 
 struct ConversationView: View {
     @Environment(\.modelContext) private var context
@@ -42,9 +41,11 @@ struct ConversationView: View {
             inputBar
         }
         .navigationTitle(chat.title)
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .primaryAction) {
                 Menu {
                     ForEach(ModelCatalog.all) { model in
                         Button {
@@ -104,7 +105,9 @@ struct ConversationView: View {
                     .padding()
                 }
             }
+            #if os(iOS)
             .scrollDismissesKeyboard(.interactively)
+            #endif
             .onChange(of: lastContent) { scrollToBottom(proxy) }
             .onChange(of: messages.count) { scrollToBottom(proxy) }
             .onAppear { scrollToBottom(proxy, animated: false) }
@@ -117,8 +120,8 @@ struct ConversationView: View {
         HStack {
             ZStack(alignment: .topTrailing) {
                 Group {
-                    if let data = attachedImageData, let image = UIImage(data: data) {
-                        Image(uiImage: image)
+                    if let data = attachedImageData, let image = Image(data: data) {
+                        image
                             .resizable()
                             .scaledToFill()
                     } else {
@@ -127,7 +130,7 @@ struct ConversationView: View {
                     }
                 }
                 .frame(width: 60, height: 60)
-                .background(Color(.secondarySystemBackground))
+                .background(Color.secondaryBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                 if attachedImageData != nil {
@@ -168,14 +171,7 @@ struct ConversationView: View {
                 .accessibilityLabel("Attach photo")
             }
 
-            TextField("Message", text: $draft, axis: .vertical)
-                .lineLimit(1...5)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .focused($inputFocused)
-                .disabled(viewModel.isStreaming)
+            messageField
 
             if viewModel.isStreaming {
                 Button(action: viewModel.stop) {
@@ -201,6 +197,29 @@ struct ConversationView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(.bar)
+    }
+
+    /// The text input. On macOS, Enter sends and Shift+Enter inserts a newline.
+    private var messageField: some View {
+        let field = TextField("Message", text: $draft, axis: .vertical)
+            .lineLimit(1...5)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(Color.secondaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .focused($inputFocused)
+            .disabled(viewModel.isStreaming)
+        #if os(macOS)
+        return field
+            .textFieldStyle(.plain)
+            .onKeyPress(keys: [.return]) { keyPress in
+                if keyPress.modifiers.contains(.shift) { return .ignored }
+                if canSend && !viewModel.isStreaming { send() }
+                return .handled
+            }
+        #else
+        return field
+        #endif
     }
 
     // MARK: - Helpers
@@ -234,28 +253,10 @@ struct ConversationView: View {
                 pickerItem = nil
             }
             if let data = try? await item.loadTransferable(type: Data.self),
-               let jpeg = Self.downscaledJPEG(from: data) {
+               let jpeg = ImageProcessing.downscaledJPEG(from: data) {
                 attachedImageData = jpeg
             }
         }
-    }
-
-    /// Resize so the longest side is <= `maxSide` and re-encode as JPEG.
-    static func downscaledJPEG(from data: Data,
-                               maxSide: CGFloat = 1024,
-                               quality: CGFloat = 0.7) -> Data? {
-        guard let image = UIImage(data: data) else { return nil }
-        let longest = max(image.size.width, image.size.height)
-        let scale = longest > maxSide ? maxSide / longest : 1
-        let newSize = CGSize(width: image.size.width * scale,
-                             height: image.size.height * scale)
-        let format = UIGraphicsImageRendererFormat.default()
-        format.scale = 1
-        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
-        let resized = renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: newSize))
-        }
-        return resized.jpegData(compressionQuality: quality)
     }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy, animated: Bool = true) {

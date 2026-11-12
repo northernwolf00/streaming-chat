@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 struct MessageBubble: View {
     let message: Message
@@ -17,9 +16,9 @@ struct MessageBubble: View {
 
     private var isUser: Bool { message.role == .user }
 
-    private var attachedImage: UIImage? {
+    private var attachedImage: Image? {
         guard let data = message.imageData else { return nil }
-        return UIImage(data: data)
+        return Image(data: data)
     }
 
     var body: some View {
@@ -41,7 +40,7 @@ struct MessageBubble: View {
     private var bubble: some View {
         VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
             if let image = attachedImage {
-                Image(uiImage: image)
+                image
                     .resizable()
                     .scaledToFill()
                     .frame(maxWidth: 220, maxHeight: 220)
@@ -90,7 +89,7 @@ struct MessageBubble: View {
     }
 
     private func copy() {
-        UIPasteboard.general.string = message.content
+        Clipboard.copy(message.content)
         withAnimation { didCopy = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             withAnimation { didCopy = false }
@@ -102,7 +101,7 @@ struct MessageBubble: View {
         if isUser {
             Color.accentColor
         } else {
-            Color(.secondarySystemBackground)
+            Color.secondaryBackground
         }
     }
 }

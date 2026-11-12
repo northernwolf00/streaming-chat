@@ -27,6 +27,9 @@ struct ContentView: View {
                 NoSelectionView()
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 760, minHeight: 480)
+        #endif
     }
 }
 

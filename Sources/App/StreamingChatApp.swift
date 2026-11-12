@@ -24,5 +24,9 @@ struct StreamingChatApp: App {
             ContentView()
         }
         .modelContainer(container)
+        #if os(macOS)
+        .defaultSize(width: 1000, height: 680)
+        .windowResizability(.contentMinSize)
+        #endif
     }
 }
