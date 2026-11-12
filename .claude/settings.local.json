@@ -42,7 +42,10 @@
       "Bash(./Build.command)",
       "Bash(git commit --quiet -m 'docs: финальный README *)",
       "Bash(git commit --quiet -m 'docs: обновить ai-logs полным логом сессии \\(ключи/почты вырезаны\\) *)",
+      "Bash(grep -cE \"be14087e809288|sk-or-v1-[A-Za-z0-9]{20,}\")",
+      "Bash(grep -riE \"sk-or-v1-[A-Za-z0-9]{20,}|be14087e809288|api.?key.*sk-\" .claude/)",
       "Bash(python3 -)",
+      "Bash(grep -rE \"be14087e809288|sk-or-v1-[A-Za-z0-9]{20,}\" .claude/)",
       "Bash(git check-ignore *)",
       "Bash(git commit --quiet -m 'chore: финальный ai-logs и .claude в архив *)",
       "Read(//Users/guwanchaldurdyyev/Development/**)",
@@ -52,12 +55,14 @@
       "Bash(git reflog *)",
       "Bash(git gc *)",
       "Bash(git cat-file *)",
+      "Bash(grep -rE \"be14087e809288|sk-or-v1-[A-Za-z0-9]{20,}\" .)",
       "Bash(git fsck *)",
       "Bash(python3 - /private/tmp/claude-501/-Users-guwanchaldurdyyev-Development-streaming-chat/f0e90bd1-44ab-4d4c-bb81-3b4f9f45e711/scratchpad/obj.bin)",
       "Bash(git commit --quiet -m 'docs: заполнить поле «Время» \\(~7 часов, рабочий день с 9:30\\) *)",
       "Bash(sed -n '/## Время/,/истории git/p' README.md)",
       "Bash(git commit --quiet -m 'docs: уточнить «Время» — ~6 часов активной работы с Claude Code *)",
-      "Bash(sed -n '/## Время/,/половину/p' README.md)"
+      "Bash(sed -n '/## Время/,/половину/p' README.md)",
+      "Bash(python3 - __TRACKED_VAR__/blocks.json __TRACKED_VAR__/blocks_readable.txt)"
     ]
   }
 }
