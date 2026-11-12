@@ -52,7 +52,12 @@
       "Bash(git reflog *)",
       "Bash(git gc *)",
       "Bash(git cat-file *)",
-      "Bash(git fsck *)"
+      "Bash(git fsck *)",
+      "Bash(python3 - /private/tmp/claude-501/-Users-guwanchaldurdyyev-Development-streaming-chat/f0e90bd1-44ab-4d4c-bb81-3b4f9f45e711/scratchpad/obj.bin)",
+      "Bash(git commit --quiet -m 'docs: заполнить поле «Время» \\(~7 часов, рабочий день с 9:30\\) *)",
+      "Bash(sed -n '/## Время/,/истории git/p' README.md)",
+      "Bash(git commit --quiet -m 'docs: уточнить «Время» — ~6 часов активной работы с Claude Code *)",
+      "Bash(sed -n '/## Время/,/половину/p' README.md)"
     ]
   }
 }
