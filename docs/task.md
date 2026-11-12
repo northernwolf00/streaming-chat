@@ -1,50 +1,52 @@
-# Task — StreamingChat
+# Задача — StreamingChat
 
-Build a ChatGPT-style AI chat app for iPhone in Swift, in roughly one working
-day, using AI coding tools (Claude Code). Both the app **and** how effectively AI
-tools were used are evaluated.
+Сделать приложение-чат с AI для iPhone на Swift примерно за один рабочий день,
+используя AI-инструменты для разработки (Claude Code). Оценивается и само
+приложение, и то, насколько эффективно использовались AI-инструменты.
 
-## Required features
+## Обязательные функции
 
-### Streaming chat
-- The AI reply appears token-by-token as it is generated (not all at once).
-- A **Stop** button cancels the generation mid-reply.
+### Потоковый чат
+- Ответ AI появляется по мере генерации, токен за токеном (а не весь сразу).
+- Кнопка **Стоп** прерывает генерацию на середине ответа.
 
-### Multiple chats
-- A list of chats on the left (ChatGPT-style).
-- History persists across app restarts (SwiftData or Core Data).
+### Несколько чатов
+- Список чатов слева (в духе ChatGPT).
+- История сохраняется между перезапусками приложения (SwiftData или Core Data).
 
-### States
-- **Loading** while waiting / streaming.
-- **Error**: no internet, or API limit reached — with a **Retry** button.
-- **Empty state**: shown when there are no chats.
+### Состояния
+- **Загрузка** во время ожидания / потоковой передачи.
+- **Ошибка**: нет интернета или достигнут лимит API — с кнопкой **Повторить**.
+- **Пустой экран**: показывается, когда чатов нет.
 
-### UI
-- Clean iOS-style UI, light and dark themes.
+### Интерфейс
+- Аккуратный интерфейс в духе iOS, светлая и тёмная тема.
 
-## Optional / bonus (only if time remains)
-- Image sending.
-- macOS version (SwiftUI multiplatform target).
-- iOS 26 Apple Foundation Models offline mode.
-Lowest-effort bonus preferred: image send or Mac target.
+## Опционально / бонус (только если осталось время)
+- Отправка фото.
+- Версия для macOS (мультиплатформенный target на SwiftUI).
+- Офлайн-режим на Apple Foundation Models для iOS 26.
+Предпочтителен наименее трудозатратный бонус: отправка фото или target для Mac.
 
-## Project constraints
-- **Minimum iOS 18.** Guard any iOS 26-only API with `#available`.
-- **XcodeGen**: do not hand-create `.xcodeproj`; write `project.yml`.
-- **`Build.command`** at repo root: double-click → `xcodegen generate` + build
-  for the simulator. Must be `chmod +x`.
-- Dependencies via **SPM only**. CocoaPods forbidden.
+## Требования к проекту
+- **Минимум iOS 18.** Любой API только для iOS 26 оборачивать в `#available`.
+- **XcodeGen**: не создавать `.xcodeproj` вручную; писать `project.yml`.
+- **`Build.command`** в корне репозитория: двойной клик → `xcodegen generate` + сборка
+  под симулятор. Должен иметь права `chmod +x`.
+- Зависимости — только через **SPM**. CocoaPods запрещён.
 
 ## AI API
-- Free API. Recommended: **OpenRouter** (works from Russia; Gemini/Groq blocked
-  there). Use a free model and don't exhaust the daily free limit in testing.
-- API key must **not** be in plaintext — obfuscate (e.g. XOR to bytes, rebuild at
-  runtime).
-- Must work with **no configuration** after building.
+- Бесплатный API. Рекомендуется: **OpenRouter** (работает из России, где Gemini/Groq
+  заблокированы). Использовать бесплатную модель и не исчерпывать дневной бесплатный
+  лимит при тестировании.
+- API-ключ НЕ должен лежать открытым текстом — обфусцировать (например, XOR в байты,
+  восстановление во время выполнения).
+- Должно работать **без настройки** после сборки.
 
-## Deliverables (zip, including `.git`)
-1. The project, with frequent commits.
-2. `docs/` (task + plan) and `CLAUDE.md` at repo root.
-3. `ai-logs/` — copied Claude Code logs with API keys / personal data removed.
-4. `README` per template: time spent, tools & models used, what the AI does,
-   what works, what's missing / known bugs, how it was tested.
+## Что прислать (zip, включая `.git`)
+1. Проект с частыми коммитами.
+2. `docs/` (задача + план) и `CLAUDE.md` в корне репозитория.
+3. `ai-logs/` — скопированные логи Claude Code с удалёнными API-ключами / личными
+   данными.
+4. `README` по шаблону: затраченное время, инструменты и модели, что делает AI,
+   что работает, чего нет / известные баги, как тестировали.

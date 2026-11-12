@@ -1,53 +1,92 @@
-# Plan — StreamingChat (~6–8 h)
+# План — StreamingChat (~6–8 ч)
 
-## 0. Before coding (30 min)
-- Get an OpenRouter key; verify streaming works with `curl`.
-- Write `docs/task.md`, `docs/plan.md`, `CLAUDE.md`.
-- Start the time tracker.
+## 0. Перед написанием кода (30 мин)
+- Получить ключ OpenRouter; проверить потоковую передачу через `curl`.
+- Написать `docs/task.md`, `docs/plan.md`, `CLAUDE.md`.
+- Запустить отсчёт времени.
 
-## 1. Skeleton (1 h)  ← current
-- `project.yml` (XcodeGen, iOS 18 target).
-- `Build.command` (`chmod +x`): generate + build + run in simulator.
-- `.gitignore` (ignore generated `.xcodeproj`).
-- Empty SwiftUI app that builds and runs.
-- **First commit.**
+## 1. Скелет (1 ч)
+- `project.yml` (XcodeGen, target iOS 18).
+- `Build.command` (`chmod +x`): генерация + сборка + запуск в симуляторе.
+- `.gitignore` (игнорировать сгенерированный `.xcodeproj`).
+- Пустое приложение SwiftUI, которое собирается и запускается.
+- **Первый коммит.**
 
-## 2. API layer (1–1.5 h)
-- `OpenRouterClient`: `URLSession.bytes(for:)` SSE streaming, parse `data:` lines.
-- `Task`-based cancellation → **Stop**.
-- Error types: no network, HTTP 429 (limit), decoding, generic.
-- `APIKey.swift`: XOR-obfuscated key bytes, reconstructed at runtime.
+## 2. Слой API (1–1.5 ч)
+- `OpenRouterClient`: потоковая передача SSE через `URLSession.bytes(for:)`,
+  разбор строк `data:`.
+- Отмена через `Task` → **Стоп**.
+- Типы ошибок: нет сети, HTTP 429 (лимит), декодирование, общая.
+- `APIKey.swift`: обфусцированные XOR байты ключа, восстановление во время выполнения.
 
-## 3. Persistence (1 h)
-- SwiftData `@Model` `Chat` and `Message`.
-- `ModelContainer` in the App.
-- Create / delete chats; list them.
+## 3. Хранение (1 ч)
+- SwiftData `@Model` `Chat` и `Message`.
+- `ModelContainer` в App.
+- Создание / удаление чатов; их список.
 
-## 4. UI & states (1.5–2 h)
-- `NavigationSplitView`: chat list ↔ conversation.
-- Message bubbles (user vs assistant).
-- Empty state, error banner + **Retry**, loading/streaming indicator.
-- Light & dark theme.
+## 4. UI и состояния (1.5–2 ч)
+- `NavigationSplitView`: список чатов ↔ диалог.
+- Пузыри сообщений (пользователь vs ассистент).
+- Пустой экран, баннер ошибки + **Повторить**, индикатор загрузки/потока.
+- Светлая и тёмная тема.
 
-## 5. Testing (1 h)
-- Build & run on iOS Simulator (iOS 26.5; target iOS 18).
-- Offline test → error + Retry flow.
-- Run `./Build.command` from a clean clone.
+## 5. Тестирование (1 ч)
+- Сборка и запуск в iOS Simulator (iOS 26.5; target iOS 18).
+- Тест без сети → сценарий ошибка + Повторить.
+- Запуск `./Build.command` из чистого клона.
 
-## 6. README & zip (30 min)
-- Fill README template; copy & scrub `ai-logs/`; zip with `.git`.
+## 6. README и zip (30 мин)
+- Заполнить шаблон README; скопировать и очистить `ai-logs/`; упаковать zip с `.git`.
 
-## Architecture overview
+## Обзор архитектуры
 ```
 Sources/
-  App/        StreamingChatApp, ContentView (root split view)
+  App/        StreamingChatApp, ContentView (корневой split view)
   Models/     Chat, Message  (SwiftData @Model)
   Services/   OpenRouterClient (SSE), APIKey (XOR), ChatError
-  Views/      ChatListView, ConversationView, MessageBubble, state views
+  Views/      ChatListView, ConversationView, MessageBubble, экраны состояний
   Resources/  Assets.xcassets
 ```
 
-## Risk notes
-- 8 GB RAM: keep one simulator at a time; build from terminal, not Xcode GUI.
-- Only iOS 26.5 simulator present — target is iOS 18, tested on 26.5.
-- Free-tier daily limits — minimal live API calls during dev.
+## Заметки о рисках
+- 8 ГБ ОЗУ: держать открытым один симулятор за раз; собирать из терминала, а не из GUI Xcode.
+- Установлен только симулятор iOS 26.5 — target iOS 18, тестирование на 26.5.
+- Дневные бесплатные лимиты — минимум живых вызовов API при разработке.
+
+---
+
+## Этап 2: опциональные функции
+
+Бонусные функции, которые можно сделать, если останется время. Для каждой — краткий
+подход и критерии готовности. Приоритет по трудозатратам: фото → Mac → офлайн.
+
+### 2.1. Фото во вложении
+- **Подход:** добавить `PhotosPicker` (framework `PhotosUI`) в панель ввода; выбранное
+  изображение кодировать в base64 data URL и отправлять как мультимодальное сообщение
+  в формате OpenRouter (массив `content` с частями `type: "text"` и `type: "image_url"`);
+  использовать модель с поддержкой зрения (vision), например одну из бесплатных vision-моделей.
+  Миниатюру вложения хранить в `Message` (новое поле `imageData: Data?` в SwiftData).
+- **Критерии готовности:** пользователь прикрепляет фото, оно отображается в пузыре;
+  ассистент отвечает по содержимому изображения; вложение сохраняется между перезапусками;
+  при выборе не-vision модели — понятное сообщение/фолбэк.
+
+### 2.2. Версия для Mac
+- **Подход:** сделать target мультиплатформенным (добавить `platform: macOS` в
+  `project.yml` или отдельный target, переиспользующий `Sources/`); обернуть
+  macOS-специфичные отличия в `#if os(macOS)`; заменить несовместимые iOS-only API
+  (например `navigationBarTitleDisplayMode`) на кросс-платформенные варианты; включить
+  App Sandbox с правом исходящих сетевых соединений.
+- **Критерии готовности:** приложение собирается и запускается на macOS из того же
+  `project.yml`; `NavigationSplitView` работает как боковая панель; потоковый чат,
+  Стоп и хранение работают; `./Build.command` поддерживает сборку под Mac.
+
+### 2.3. Офлайн-режим на Apple Foundation Models (iOS 26+)
+- **Подход:** использовать framework `FoundationModels` (`SystemLanguageModel`,
+  `LanguageModelSession`) для генерации на устройстве; весь код — строго под
+  `if #available(iOS 26, *)` с фолбэком на OpenRouter для iOS 18; добавить переключатель
+  «офлайн / онлайн» и проверку `SystemLanguageModel.default.availability`; переиспользовать
+  тот же потоковый интерфейс (`AsyncThrowingStream`), что и сетевой клиент, чтобы UI не менялся.
+- **Критерии готовности:** на устройстве/симуляторе с iOS 26 и доступной моделью чат
+  работает без сети; потоковый вывод и Стоп функционируют; на iOS 18 функция скрыта,
+  приложение продолжает работать через OpenRouter; при недоступности модели — понятное
+  состояние.

@@ -1,6 +1,6 @@
-# AI logs
+# AI-логи
 
-Claude Code session transcript for this project (model: Claude Opus 4.8).
+Транскрипт сессии Claude Code по этому проекту (модель: Claude Opus 4.8).
 
-Secrets scrubbed before committing: OpenRouter API keys (and any hex fragments)
-replaced with `REDACTED`, email addresses replaced with `REDACTED@example.com`.
+Секреты очищены перед коммитом: API-ключи OpenRouter (и любые hex-фрагменты)
+заменены на `REDACTED`, адреса электронной почты заменены на `REDACTED@example.com`.

@@ -1,130 +1,129 @@
 # StreamingChat
 
-A ChatGPT-style streaming AI chat app for iPhone, built in SwiftUI. The assistant's
-reply appears token-by-token as it is generated, with a Stop button to cancel
-mid-reply. Chats are kept in a sidebar and persist across launches.
+Потоковое AI-приложение-чат для iPhone в духе ChatGPT на SwiftUI. Ответ ассистента
+появляется токен за токеном по мере генерации, с кнопкой **Стоп** для прерывания на
+середине. Чаты хранятся в боковой панели и сохраняются между запусками.
 
-Built in a single working day, primarily with Claude Code (Opus 4.8).
+Сделано за один рабочий день, преимущественно с помощью Claude Code (Opus 4.8).
 
 ---
 
-## Time spent
+## Время
 
-~2.5 hours of active development (skeleton → API layer → persistence → UI → testing
-→ docs). See the git history for the real timeline — commits are small and frequent.
+~2.5 часа активной разработки (скелет → слой API → хранение → UI → тестирование →
+документация). Реальная хронология видна в истории git — коммиты маленькие и частые.
 
-## Tools & models used
+## Инструменты
 
-**Development tools**
-- **Claude Code** (model: Claude Opus 4.8) — wrote essentially all of the code.
-- **XcodeGen 2.46** — generates `StreamingChat.xcodeproj` from `project.yml`
-  (the `.xcodeproj` is never hand-edited and is git-ignored).
+**Инструменты разработки**
+- **Claude Code** (модель: Claude Opus 4.8) — написал практически весь код.
+- **XcodeGen 2.46** — генерирует `StreamingChat.xcodeproj` из `project.yml`
+  (`.xcodeproj` никогда не правится вручную и игнорируется git).
 - **Xcode 26.5 / Swift 6.3**, `xcodebuild`, iOS Simulator.
-- Dependencies: **Swift Package Manager only** (in fact zero third-party packages —
-  Foundation, SwiftUI and SwiftData cover everything). **No CocoaPods.**
+- Зависимости: **только Swift Package Manager** (фактически ноль сторонних пакетов —
+  хватает Foundation, SwiftUI и SwiftData). **Без CocoaPods.**
 
-**AI provider & models (in the app)**
-- **OpenRouter** — chosen because it works from regions where Gemini/Groq are
-  blocked. Free models only.
-- Model routing with automatic fallback (if the first is rate-limited upstream,
-  OpenRouter tries the next):
-  1. `baidu/ernie-5.5-flash-preview:free` (primary — fast, non-reasoning)
+## AI в приложении
+
+- **Сервис:** OpenRouter — выбран потому, что работает из регионов, где Gemini/Groq
+  заблокированы. Только бесплатные модели.
+- **Модели** с автоматическим fallback (если первая ограничена по лимиту на стороне
+  провайдера, OpenRouter пробует следующую):
+  1. `baidu/ernie-5.5-flash-preview:free` (основная — быстрая, без reasoning)
   2. `google/gemma-4-31b-it:free`
   3. `google/gemma-4-26b-a4b-it:free`
+- **Что делает:** это разговорный ассистент. Вы пишете сообщение; приложение отправляет
+  весь диалог в endpoint chat-completions OpenRouter с `stream: true` и отображает ответ
+  **токен за токеном** через Server-Sent Events. Каждый ход отправляется вся история,
+  чтобы у ассистента был контекст.
 
-## What the AI does
+## Сделано
 
-The app is a conversational assistant. You type a message; the app sends the whole
-conversation to OpenRouter's chat-completions endpoint with `stream: true` and
-renders the reply **token-by-token** over Server-Sent Events. Full history is sent
-each turn so the assistant has context.
+- ✅ **Потоковые ответы** — токен за токеном через `URLSession.bytes(for:)` + SSE.
+- ✅ **Кнопка Стоп** — прерывает текущую генерацию (`Task.cancel()`), сохраняя уже
+  полученный текст.
+- ✅ **Несколько чатов** — список в боковой панели, создание и удаление свайпом.
+- ✅ **Сохранение истории** — SwiftData (`Chat` + `Message`); переживает перезапуск.
+- ✅ **Состояния** — индикатор загрузки/набора, **баннер ошибки с кнопкой Повторить**
+  (нет сети / лимит HTTP 429) и пустые экраны (нет чатов / ничего не выбрано / пустой диалог).
+- ✅ **Светлая и тёмная тема** — используются системные семантические цвета, адаптация
+  автоматическая.
+- ✅ **iPhone + iPad** — компоновка через `NavigationSplitView`.
+- ✅ **Без настройки после сборки** — ключ встроен (обфусцирован), бесплатная модель
+  выбрана по умолчанию; `./Build.command` собирает и запускает из чистого клона.
 
-## What works
+## Не сделано и известные баги
 
-- ✅ **Streaming responses** — token-by-token via `URLSession.bytes(for:)` + SSE.
-- ✅ **Stop button** — cancels the in-flight generation (`Task.cancel()`), keeping
-  whatever text already arrived.
-- ✅ **Multiple chats** — sidebar list, create and swipe-to-delete.
-- ✅ **Persistent history** — SwiftData (`Chat` + `Message`); survives app restart.
-- ✅ **States** — loading/typing indicator, **error banner with Retry** (no network /
-  HTTP 429 limit), and empty states (no chats / no selection / empty conversation).
-- ✅ **Light & dark themes** — uses system semantic colors, adapts automatically.
-- ✅ **iPhone + iPad** — `NavigationSplitView` layout.
-- ✅ **No configuration after build** — the API key is baked in (obfuscated) and a
-  free model is selected by default; `./Build.command` builds & runs from a clean
-  clone.
+- **Нет симулятора iOS 18 на сборочной машине** — установлен только runtime iOS 26.5.
+  Target сборки — **iOS 18.0**, и код не использует API только для iOS 26, но
+  тестирование на симуляторе проводилось на iOS 26.5.
+- **Опциональные бонусы не реализованы** — отправка фото / версия для macOS / офлайн на
+  Foundation Models. Это опциональные пункты, оставлены ради времени. Подход и критерии
+  готовности по каждому описаны в `docs/plan.md`, раздел «Этап 2».
+- **Бесплатные лимиты** — у бесплатных моделей есть общие дневные лимиты; список fallback
+  это смягчает, но в момент сильного ограничения может всплыть ошибка «лимит API достигнут»
+  (это, в свою очередь, требуемое и обрабатываемое состояние с кнопкой Повторить).
+- **Reasoning-модели не используются** — некоторые бесплатные модели стримят «размышления»
+  в отдельном поле `reasoning` (пустой `content` до конца); модель по умолчанию — без
+  reasoning, поэтому токены появляются сразу.
 
-## Security: API key handling
+## Как проверяли
 
-The key is **never stored in plaintext** in source or in the compiled binary's
-string table. It is XOR-obfuscated into two byte arrays (`pad` and `obfuscated`,
-effectively a one-time pad) in `Sources/Services/APIKey.swift` and reconstructed at
-runtime as `obfuscated XOR pad`. Regenerate with:
+- **Сборка** — `xcodebuild` под iOS Simulator: **BUILD SUCCEEDED** (чистая сборка).
+- **Чистый клон, без настройки** — `git clone` в новую папку, затем `xcodegen generate`
+  + `xcodebuild` → собирается без ручных действий; `.xcodeproj` в репозитории нет.
+- **Запуск** — установлено и запущено в iOS Simulator (iOS 26.5); проверены пустой экран,
+  навигация и **живая потоковая передача end-to-end** (сообщение → ответ токен за токеном,
+  видна кнопка Стоп во время генерации).
+- **API / потоковая передача** — проверена тем же запросом, что шлёт приложение (список
+  fallback-моделей, `stream: true`), подтверждён вывод SSE токен за токеном от OpenRouter
+  и корректное восстановление обфусцированного ключа.
+- **Сценарий ошибки** — проверено сопоставление ошибок: `URLError.notConnectedToInternet →
+  ChatError.noNetwork` и HTTP `429 → ChatError.rateLimited`, оба отображаются `ErrorBanner`
+  с кнопкой Повторить.
+
+---
+
+## Сборка и запуск
+
+Двойной клик по **`Build.command`** в Finder — он при необходимости установит XcodeGen,
+сгенерирует проект, соберёт под iOS Simulator, загрузит его, установит и запустит.
+
+Или вручную:
+
+```sh
+xcodegen generate
+open StreamingChat.xcodeproj   # затем Run (⌘R)
+```
+
+## Безопасность: обработка API-ключа
+
+Ключ **никогда не хранится открытым текстом** в исходниках или в таблице строк
+скомпилированного бинарника. Он обфусцирован через XOR в два массива байтов (`pad` и
+`obfuscated`, фактически одноразовый шифр-блокнот) в `Sources/Services/APIKey.swift` и
+восстанавливается во время выполнения как `obfuscated XOR pad`. Перегенерация:
 
 ```sh
 swift scripts/ObfuscateKey.swift "sk-or-v1-...."
 ```
 
-This is obfuscation, not encryption — it defeats trivial `strings` scanning, which
-is what the task requires.
+Это обфускация, а не шифрование — она защищает от тривиального сканирования `strings`,
+что и требуется в задаче.
 
-## What's missing / known bugs / trade-offs
-
-- **No iOS 18 simulator on the build machine** — only an iOS 26.5 runtime was
-  installed. The deployment target is **iOS 18.0** and the code uses no iOS-26-only
-  APIs, but on-device/simulator testing was done on iOS 26.5.
-- **No live in-app streaming screenshot captured** — the streaming contract (key,
-  endpoint, model, SSE parsing) was verified end-to-end with the exact request the
-  app sends (see Testing). Driving the Simulator UI from the CLI to script a full
-  send/stream was out of scope for the time budget.
-- **Free-tier limits** — free models have shared daily rate limits; the fallback
-  list mitigates this but a heavily throttled moment can still surface the "API
-  limit reached" error (which is itself a required, handled state with Retry).
-- **Reasoning models avoided** — some free models stream their chain-of-thought in a
-  separate `reasoning` field (empty `content` until the end); the default model is a
-  non-reasoning one so tokens appear immediately.
-- No bonus features (image send / macOS target / Foundation Models offline) — these
-  were optional and left out for time.
-
-## How it was tested
-
-- **Build** — `xcodebuild` for the iOS Simulator: **BUILD SUCCEEDED** (clean build).
-- **Clean-clone, no-config** — `git clone` to a fresh dir, then `xcodegen generate`
-  + `xcodebuild` → builds with zero manual setup; `.xcodeproj` is not in the repo.
-- **Run** — installed & launched in the iOS 26.5 Simulator; verified the empty state
-  and navigation render correctly (see screenshots during development).
-- **API / streaming** — verified with the exact request shape the app sends (model
-  fallback list, `stream: true`), confirming token-by-token SSE output from
-  OpenRouter and that the obfuscated key reconstructs correctly.
-- **Error path** — verified the error mapping: `URLError.notConnectedToInternet →
-  ChatError.noNetwork` and HTTP `429 → ChatError.rateLimited`, both rendered by the
-  `ErrorBanner` with a Retry button.
-
-## Build & run
-
-Double-click **`Build.command`** in Finder — it installs XcodeGen if needed,
-generates the project, builds for an iOS Simulator, boots it, installs and launches.
-
-Or manually:
-
-```sh
-xcodegen generate
-open StreamingChat.xcodeproj   # then Run (⌘R)
-```
-
-## Project layout
+## Структура проекта
 
 ```
-project.yml          XcodeGen spec (iOS 18 target)
-Build.command        Double-click: generate + build + run in simulator
-CLAUDE.md            Guidance for AI agents working in this repo
-docs/                task.md (brief) + plan.md
-scripts/             ObfuscateKey.swift (regenerate the obfuscated key)
-ai-logs/             Scrubbed Claude Code session log (keys/emails removed)
+project.yml          Спецификация XcodeGen (target iOS 18)
+Build.command        Двойной клик: генерация + сборка + запуск в симуляторе
+CLAUDE.md            Указания для AI-агентов в этом репозитории
+AGENTS.md            То же, что CLAUDE.md (для Codex/Cursor)
+docs/                task.md (описание) + plan.md (план, включая Этап 2)
+scripts/             ObfuscateKey.swift (перегенерация обфусцированного ключа)
+ai-logs/             Очищенный лог сессии Claude Code (ключи/почты удалены)
 Sources/
-  App/               App entry, root split view
+  App/               Точка входа, корневой split view
   Models/            SwiftData Chat & Message
   Services/          OpenRouterClient (SSE), APIKey (XOR), ChatError
-  Views/             ChatList, Conversation, MessageBubble, state views, view model
+  Views/             ChatList, Conversation, MessageBubble, экраны состояний, view model
   Resources/         Assets.xcassets
 ```
