@@ -19,20 +19,35 @@ struct ConversationView: View {
 
     /// Selected model, persisted across launches ("auto" = smart fallback).
     @AppStorage("selectedModelID") private var selectedModelID = AIModel.autoID
+    /// Manual offline (on-device) switch, persisted across launches.
+    @AppStorage("forceOnDevice") private var forceOnDevice = false
+
+    @ObservedObject private var network = NetworkMonitor.shared
 
     // Photo attachment state.
     @State private var pickerItem: PhotosPickerItem?
     @State private var attachedImageData: Data?
     @State private var isProcessingImage = false
 
+    private var onDeviceAvailability: OnDeviceAvailability { OnDeviceAvailability.current }
+
+    /// Whether the next reply will be generated on-device (offline).
+    private var willUseOffline: Bool {
+        onDeviceAvailability.isAvailable && (forceOnDevice || !network.isOnline)
+    }
+
     private var messages: [Message] { chat.sortedMessages }
 
     var body: some View {
         VStack(spacing: 0) {
+            if willUseOffline {
+                offlineBanner
+            }
             messageList
             if let error = viewModel.error {
                 ErrorBanner(error: error) {
-                    viewModel.retry(chat: chat, context: context, modelID: selectedModelID)
+                    viewModel.retry(chat: chat, context: context,
+                                    modelID: selectedModelID, forceOnDevice: forceOnDevice)
                 }
             }
             if attachedImageData != nil || isProcessingImage {
@@ -47,20 +62,35 @@ struct ConversationView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    ForEach(ModelCatalog.all) { model in
-                        Button {
-                            selectedModelID = model.id
-                        } label: {
-                            Label(
-                                model.menuLabel,
-                                systemImage: model.id == selectedModelID ? "checkmark" : model.capabilityIcon
-                            )
+                    Section {
+                        if onDeviceAvailability.isAvailable {
+                            Toggle(isOn: $forceOnDevice) {
+                                Label("On-device (offline)", systemImage: "cpu")
+                            }
+                        } else {
+                            Button {} label: {
+                                Label(onDeviceAvailability.reason ?? "On-device unavailable",
+                                      systemImage: "cpu")
+                            }
+                            .disabled(true)
+                        }
+                    }
+                    Section("Model") {
+                        ForEach(ModelCatalog.all) { model in
+                            Button {
+                                selectedModelID = model.id
+                            } label: {
+                                Label(
+                                    model.menuLabel,
+                                    systemImage: model.id == selectedModelID ? "checkmark" : model.capabilityIcon
+                                )
+                            }
                         }
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Image(systemName: "cpu")
-                        Text(ModelCatalog.model(id: selectedModelID).name)
+                        Image(systemName: willUseOffline ? "cpu" : "cloud")
+                        Text(willUseOffline ? "Offline" : ModelCatalog.model(id: selectedModelID).name)
                             .lineLimit(1)
                         Image(systemName: "chevron.down")
                             .font(.caption2)
@@ -77,10 +107,30 @@ struct ConversationView: View {
             // Switching to a text-only model drops any attached photo.
             if !selectedSupportsVision { attachedImageData = nil }
         }
+        .onChange(of: willUseOffline) { _, offline in
+            // Offline (on-device) is text-only — drop any attached photo.
+            if offline { attachedImageData = nil }
+        }
     }
 
     private var selectedSupportsVision: Bool {
         ModelCatalog.model(id: selectedModelID).supportsVision
+    }
+
+    // MARK: - Offline banner
+
+    private var offlineBanner: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "cpu")
+            Text("Offline · on-device")
+                .fontWeight(.semibold)
+            Text("· photos unavailable")
+                .foregroundStyle(.secondary)
+        }
+        .font(.footnote)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(Color.accentColor.opacity(0.12))
     }
 
     // MARK: - Message list
@@ -159,8 +209,9 @@ struct ConversationView: View {
         // PhotosPicker label (a Sendable closure).
         let streaming = viewModel.isStreaming
         return HStack(alignment: .bottom, spacing: 8) {
-            // Attach button only for vision-capable models (or Auto).
-            if selectedSupportsVision {
+            // Attach button only for vision-capable models (or Auto), and never
+            // offline — the on-device model is text-only.
+            if selectedSupportsVision && !willUseOffline {
                 PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
                     Image(systemName: "photo.on.rectangle")
                         .font(.title3)
@@ -240,7 +291,8 @@ struct ConversationView: View {
         let image = attachedImageData
         draft = ""
         attachedImageData = nil
-        viewModel.send(text, imageData: image, modelID: selectedModelID, to: chat, context: context)
+        viewModel.send(text, imageData: image, modelID: selectedModelID,
+                       forceOnDevice: forceOnDevice, to: chat, context: context)
     }
 
     /// Load the picked photo, downscale and compress it to keep requests small.

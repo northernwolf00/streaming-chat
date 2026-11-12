@@ -14,6 +14,7 @@ enum ChatError: LocalizedError, Equatable {
     case missingKey           // placeholder key still in place
     case imageUnsupported     // selected model can't accept image input
     case imageTooLarge        // attached image rejected as too large
+    case onDevice(String)     // on-device (Foundation Models) generation failed
     case decoding
     case cancelled            // user pressed Stop
     case unknown(String)
@@ -32,6 +33,8 @@ enum ChatError: LocalizedError, Equatable {
             return "This model can't read images right now. Try again or send without a photo."
         case .imageTooLarge:
             return "The image is too large. Try a smaller photo."
+        case .onDevice(let message):
+            return "On-device model error: \(message)"
         case .decoding:
             return "Couldn't read the response from the server."
         case .cancelled:

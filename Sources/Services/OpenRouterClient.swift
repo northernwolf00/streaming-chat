@@ -72,7 +72,8 @@ private enum ContentPart: Encodable {
     }
 }
 
-final class OpenRouterClient {
+/// The cloud provider: OpenRouter over the network.
+final class OpenRouterClient: ChatProvider {
 
     static let shared = OpenRouterClient()
 
